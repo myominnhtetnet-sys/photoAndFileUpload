@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>User Registration</title>
+<link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+<link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+
+<div class="register-container">
+    <h2>User Register Form</h2>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <span th:text="${errorMessage}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+    <form th:action="@{/userUpload}" th:object="${userObj}" method="post" enctype="multipart/form-data">
+
+        <label for="username">Username </label>
+        <input type="text" id="username" th:field="*{name}" required>
+
+        <label for="email">Email </label>
+        <input type="email" id="email" th:field="*{email}" pattern="[a-z_]+([a-z0-9_]+)*@gmail\.com" required>
+
+        <label for="age">Age </label>
+        <input type="number" id="age" th:field="*{age}" required>
+
+        <label for="password">Password </label>
+        <input type="password" id="password" th:field="*{password}" required>
+
+        <label for="photo">Photo </label>
+        <input type="file" id="photo" th:field="*{photo}" accept="image/png, image/jpeg, image/jpg, image/gif, image/webp" required>
+
+        <button type="submit" class="btn-submit">Register</button>
+    </form>
+</div>
+
+</body>
+</html>
