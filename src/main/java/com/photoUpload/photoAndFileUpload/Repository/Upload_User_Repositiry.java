@@ -1,4 +1,4 @@
-package com.photoUpload.photoAndFileUpload.Repository;
+ package com.photoUpload.photoAndFileUpload.Repository;
 
 import java.io.IOException;
 import java.util.List;
@@ -39,7 +39,7 @@ public class Upload_User_Repositiry {
 
     // 2. Select All
     public List<User_Bean> getAllUsers() {
-        String sql = "SELECT * FROM upload_table";
+        String sql = "SELECT * FROM upload_table ORDER BY id DESC";
         return jdbcTemplate.query(sql, new mapper());
     }
 
