@@ -1,8 +1,10 @@
 package com.photoUpload.photoAndFileUpload.controller;
 
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +30,7 @@ public class User_Controller {
         "image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"
     );
 
+    private static final long MAX_FILE_SIZE = 1024 * 1024;
     @GetMapping("/user")
     public ModelAndView userUpload() {
         return new ModelAndView("User", "userObj", new User_Bean());
@@ -35,16 +38,21 @@ public class User_Controller {
 
     @PostMapping("/userUpload")
     public String seeUserUpload(@ModelAttribute("userObj") User_Bean user, Model model, RedirectAttributes redirectAttributes) {
-        
-        // 1. Email စစ်ဆေးခြင်း
+        // Email
         if (upload_user.isEmailExists(user.getEmail())) {
             model.addAttribute("errorMessage", "Email ' " + user.getEmail() + " ' is already registered!");
             model.addAttribute("userObj", user);
             return "User";
         }
-
-        // 2. Image File Validation စစ်ဆေးခြင်း
+        // Image File Validation
         if (user.getPhoto() != null && !user.getPhoto().isEmpty()) {
+            // 1 MB File Size Check
+            if (user.getPhoto().getSize() > MAX_FILE_SIZE) {
+                model.addAttribute("errorMessage", "Photo size must be less than 1 MB!");
+                model.addAttribute("userObj", user);
+                return "User";
+            }
+            // File Type Check 
             String contentType = user.getPhoto().getContentType();
             if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
                 model.addAttribute("errorMessage", "Only (JPG, PNG, GIF, WEBP)");
@@ -52,25 +60,20 @@ public class User_Controller {
                 return "User";
             }
         }
-
         try {
             upload_user.insertUploadUser(user);
-            
             List<User_Bean> list = upload_user.getAllUsers();
-            
-            // 💡 ပြင်ဆင်ချက်: ORDER BY id DESC ကြောင့် index 0 သည် အသစ်ဆုံး ထည့်လိုက်သော User ဖြစ်ပါသည်
+            // ORDER BY id DESC ==>> index 0 ===>>> new user
             User_Bean latestUser = list.get(0);
-            
             return "redirect:/user/profile/" + latestUser.getId();
-
-        } catch (org.springframework.dao.DuplicateKeyException e) {
+        } catch (DuplicateKeyException e) {
             model.addAttribute("errorMessage", "Email already exists in system!");
             model.addAttribute("userObj", user);
             return "User";
         }
     }
 
-    // 💡 သီးသန့် Profile ကြည့်ရန် GET Method သစ်
+    // Profile
     @GetMapping("/user/profile/{id}")
     public String viewUserProfile(@PathVariable("id") Integer id, Model model) {
         User_Bean user = upload_user.getById(id);
@@ -84,7 +87,7 @@ public class User_Controller {
         User_Bean user = upload_user.getById(id);
         
         if (user.getPhotoBytes() != null && user.getPhotoBytes().length > 0) {
-            String base64 = java.util.Base64.getEncoder().encodeToString(user.getPhotoBytes());
+            String base64 = Base64.getEncoder().encodeToString(user.getPhotoBytes());
             user.setBase64Photo(base64);
         }
         
@@ -92,31 +95,37 @@ public class User_Controller {
         return user; 
     }
 
+    //  Edit (Update) (1 MB Size Check contain)
+    @PostMapping("/user/update")
+    public String updateUser(@ModelAttribute User_Bean user, RedirectAttributes redirectAttributes) {
+        
+        // Image Validation
+        if (user.getPhoto() != null && !user.getPhoto().isEmpty()) {
+            
+            // 1 MB File Size Check
+            if (user.getPhoto().getSize() > MAX_FILE_SIZE) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Photo size must be less than 1 MB!");
+                return "redirect:/user/profile/" + user.getId();
+            }
+
+            // File Type Check
+            String contentType = user.getPhoto().getContentType();
+            if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Only accept (JPG, PNG, GIF, WEBP) Image!");
+                return "redirect:/user/profile/" + user.getId();
+            }
+        }
+
+        upload_user.updateUploadUser(user); 
+
+        return "redirect:/user/profile/" + user.getId();
+    }
+    
     @GetMapping("/users")
     public String viewUserList(Model model) {
         List<User_Bean> userList = upload_user.getAllUsers(); 
         model.addAttribute("users", userList);
         return "User_list";
-    }
-
-    // 🛠 Edit (Update) ပြုလုပ်သည့် မက်သဒ် ပြင်ဆင်ချက်
-    @PostMapping("/user/update")
-    public String updateUser(@ModelAttribute User_Bean user, RedirectAttributes redirectAttributes) {
-        
-        // 1. Image Validation စစ်ဆေးခြင်း
-        if (user.getPhoto() != null && !user.getPhoto().isEmpty()) {
-            String contentType = user.getPhoto().getContentType();
-            if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Only accept Image");
-                return "redirect:/user/profile/" + user.getId();
-            }
-        }
-
-        // 2. Database တွင် Data ပြင်ဆင်ခြင်း
-        upload_user.updateUploadUser(user); 
-
-        // 3. Profile GET URL သို့ Redirect ပြန်လုပ်ပေးပါမည်
-        return "redirect:/user/profile/" + user.getId();
     }
 
     @PostMapping("/user/delete/{id}")

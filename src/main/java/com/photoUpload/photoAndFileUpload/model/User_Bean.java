@@ -4,8 +4,7 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter 
-@Setter
+@Getter @Setter
 public class User_Bean {
 
     private Integer id;
@@ -13,6 +12,7 @@ public class User_Bean {
     private String email;
     private Integer age;
     private String password;
+    
     private MultipartFile photo;
     private byte[] photoBytes;
     private String base64Photo;

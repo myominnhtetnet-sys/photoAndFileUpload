@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="UTF-8">
-<title>Registered User Profile</title>
+<title>Registered Profile</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link th:href="@{/css/style2.css}" rel="stylesheet">
 </head>
@@ -10,7 +10,7 @@
 
 <div class="container mt-5">
     <div class="card p-4 shadow" style="max-width: 500px; margin: auto;">
-        <h2>Registered User Profile</h2>
+        <h2>Registered Profile</h2>
 
         <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
             <span th:text="${errorMessage}"></span>
@@ -47,6 +47,11 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="editId" name="id">
+                    
+                    <div class="text-center mb-2">
+                            <img id="editPhotoPreview" src="" class="img-thumbnail" 
+                                 style="width: 120px; height: 120px; object-fit: cover; display: none;" alt="User Photo">
+                        </div>
 
                     <div class="mb-3">
                         <label for="editName" class="form-label">UserName</label>
@@ -60,7 +65,7 @@
 
                     <div class="mb-3">
                         <label for="editPassword" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="editPassword" name="password" required>
+                        <input type="password" class="form-control" id="editPassword" name="password" readonly>
                     </div>
 
                     <div class="mb-3">
@@ -68,16 +73,10 @@
                         <input type="number" class="form-control" id="editAge" name="age" required>
                     </div>
 
-                    <!-- 📸 Photo Preview & Input Section -->
+                    <!-- Photo Preview & Input -->
                     <div class="mb-3">
-                        <label class="form-label d-block">Current / Selected Photo</label>
-                        <div class="text-center mb-2">
-                            <img id="editPhotoPreview" src="" class="img-thumbnail" 
-                                 style="width: 120px; height: 120px; object-fit: cover; display: none;" alt="User Photo">
-                        </div>
-                        
-                        <label for="editPhoto" class="form-label">Change Photo (Optional)</label>
-                        <input type="file" class="form-control" id="editPhoto" name="photo" accept="image/*">
+                        <label for="editPhoto" class="form-label">Change Photo (Max: 1 MB)</label>
+                        <input type="file" class="form-control" id="editPhoto" name="photo" accept="image/png, image/jpeg, image/jpg, image/gif, image/webp">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -90,64 +89,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-// Modal ပွင့်လာပါက Data ဖြည့်သွင်းခြင်း
-const editUserModal = document.getElementById('editUserModal');
-if (editUserModal) {
-    editUserModal.addEventListener('show.bs.modal', function(event) {
-        const button = event.relatedTarget;
-        const userId = button.getAttribute('data-id');
-
-        fetch(`/user/edit/${userId}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Failed to fetch user data');
-                return response.json();
-            })
-            .then(user => {
-                document.getElementById('editId').value = user.id;
-                document.getElementById('editName').value = user.name;
-                document.getElementById('editEmail').value = user.email;
-                document.getElementById('editPassword').value = user.password;
-                document.getElementById('editAge').value = user.age;
-                
-                const editPhotoInput = document.getElementById('editPhoto');
-                if (editPhotoInput) editPhotoInput.value = '';
-
-                const imgPreview = document.getElementById('editPhotoPreview');
-                if (user.base64Photo) {
-                    imgPreview.src = 'data:image/png;base64,' + user.base64Photo;
-                    imgPreview.style.display = 'inline-block';
-                } else {
-                    imgPreview.style.display = 'none';
-                }
-            })
-            .catch(error => console.error('Error fetching user:', error));
-    });
-}
-
-// Photo Input ရွေးချယ်မှု စစ်ဆေးခြင်းနှင့် Preview ပြသခြင်း
-document.getElementById('editPhoto')?.addEventListener('change', function(event) {
-    const fileInput = event.target;
-    const file = fileInput.files[0];
-    const imgPreview = document.getElementById('editPhotoPreview');
-
-    if (file) {
-        const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!validImageTypes.includes(file.type)) {
-            alert('ဓာတ်ပုံ (JPG, PNG, GIF, WEBP) ဖိုင်များကိုသာ တင်ခွင့်ရှိပါသည်။');
-            fileInput.value = ''; 
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            imgPreview.src = e.target.result;
-            imgPreview.style.display = 'inline-block';
-        };
-        reader.readAsDataURL(file);
-    }
-});
-</script>
+<script type="text/javascript" th:src="@{/js/uo.js}"></script>
 </body>
 </html>

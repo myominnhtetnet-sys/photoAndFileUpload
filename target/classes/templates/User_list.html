@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="UTF-8">
-<title>User Registration List</title>
+<title>Registration List</title>
 <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
 <link th:href="@{/css/style1.css}" rel="stylesheet">
 </head>
@@ -11,7 +11,9 @@
 <div class="container" style="margin-top: 5%; margin-bottom: 5%;">
     <h2>User List</h2>
     
-            <a th:href="@{/user}" class="d-flex justify-content-end"> + Add New User </a>
+    <div class="d-flex justify-content-end mb-3">
+        <a th:href="@{/user}" class="btn btn-primary">+ Add New User</a>
+    </div>
 
     <table class="table table-bordered table-striped mt-3 align-middle">
         <thead class="table-dark">
@@ -28,12 +30,20 @@
         <tbody>
             <tr th:each="user, index : ${users}">
                 <td th:text="${index.count}"></td>
-                <td th:text="${user.name}"></td>
+                
+                <!-- UserName & NEW Badge -->
+                <td class="position-relative">
+                    <span th:text="${user.name}"></span>
+                    
+                    <!-- latest user ==>> NEW Badge  -->
+                    <span th:if="${index.first}" class="badge bg-danger new-badge">NEW</span>
+                </td>
+                
                 <td th:text="${user.email}"></td>
                 <td th:text="${user.password}"></td> 
                 <td th:text="${user.age}"></td>
                 <td>
-                    <!-- Base64 Image တိုက်ရိုက်ပြသခြင်း -->
+                    <!-- Base64 Image direct show -->
                     <img th:if="${user.base64Photo != null}" 
                          th:src="'data:image/png;base64,' + ${user.base64Photo}" 
                          style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px;"/>
