@@ -1,8 +1,13 @@
 package com.photoUpload.photoAndFileUpload.controller;
 
+import java.awt.image.BufferedImage;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+
+import javax.imageio.ImageIO;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Controller;
@@ -15,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import com.photoUpload.photoAndFileUpload.Repository.Upload_User_Repositiry;
 import com.photoUpload.photoAndFileUpload.model.User_Bean;
 
@@ -38,36 +42,58 @@ public class User_Controller {
 
     @PostMapping("/userUpload")
     public String seeUserUpload(@ModelAttribute("userObj") User_Bean user, Model model, RedirectAttributes redirectAttributes) {
-        // Email
+
+        // 1. Email Exists Check
         if (upload_user.isEmailExists(user.getEmail())) {
             model.addAttribute("errorMessage", "Email ' " + user.getEmail() + " ' is already registered!");
+            user.setEmail(""); // Email ပြန်ဖျက်ပေးခြင်း
             model.addAttribute("userObj", user);
             return "User";
         }
-        // Image File Validation
+
+        // 2. Image File & Real Photo Validation
         if (user.getPhoto() != null && !user.getPhoto().isEmpty()) {
-            // 1 MB File Size Check
+
+            // (A) 1 MB File Size Check
             if (user.getPhoto().getSize() > MAX_FILE_SIZE) {
                 model.addAttribute("errorMessage", "Photo size must be less than 1 MB!");
                 model.addAttribute("userObj", user);
                 return "User";
             }
-            // File Type Check 
+
+            // (B) MIME Content Type Check
             String contentType = user.getPhoto().getContentType();
             if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
-                model.addAttribute("errorMessage", "Only (JPG, PNG, GIF, WEBP)");
+                model.addAttribute("errorMessage", "Only (JPG, PNG, GIF, WEBP) images are allowed!");
+                model.addAttribute("userObj", user);
+                return "User";
+            }
+
+            // 🌟 (C) Real Image Check (တကယ့် ဓာတ်ပုံ စစ်စစ် ဟုတ်မဟုတ် စစ်ဆေးခြင်း)
+            try (InputStream inputStream = user.getPhoto().getInputStream()) {
+                BufferedImage bufferedImage = ImageIO.read(inputStream);
+                
+                // ImageIO က Read လုပ်လို့ မရရင် (null ထွက်လာရင်) တကယ့် ဓာတ်ပုံမဟုတ်ပါ
+                if (bufferedImage == null) {
+                    model.addAttribute("errorMessage", "Uploaded file is not a valid image!");
+                    model.addAttribute("userObj", user);
+                    return "User";
+                }
+            } catch (Exception e) {
+                model.addAttribute("errorMessage", "Corrupted or invalid image file!");
                 model.addAttribute("userObj", user);
                 return "User";
             }
         }
+
         try {
             upload_user.insertUploadUser(user);
             List<User_Bean> list = upload_user.getAllUsers();
-            // ORDER BY id DESC ==>> index 0 ===>>> new user
             User_Bean latestUser = list.get(0);
             return "redirect:/user/profile/" + latestUser.getId();
         } catch (DuplicateKeyException e) {
             model.addAttribute("errorMessage", "Email already exists in system!");
+            user.setEmail("");
             model.addAttribute("userObj", user);
             return "User";
         }
@@ -102,22 +128,33 @@ public class User_Controller {
         // Image Validation
         if (user.getPhoto() != null && !user.getPhoto().isEmpty()) {
             
-            // 1 MB File Size Check
+            // 1. File Size Check
             if (user.getPhoto().getSize() > MAX_FILE_SIZE) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Photo size must be less than 1 MB!");
                 return "redirect:/user/profile/" + user.getId();
             }
 
-            // File Type Check
+            // 2. MIME Type Check
             String contentType = user.getPhoto().getContentType();
             if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase())) {
                 redirectAttributes.addFlashAttribute("errorMessage", "Only accept (JPG, PNG, GIF, WEBP) Image!");
                 return "redirect:/user/profile/" + user.getId();
             }
+
+            // 🌟 3. Real Image Check (Server-Side)
+            try (InputStream inputStream = user.getPhoto().getInputStream()) {
+                BufferedImage bufferedImage = ImageIO.read(inputStream);
+                if (bufferedImage == null) {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Uploaded file is not a valid image!");
+                    return "redirect:/user/profile/" + user.getId();
+                }
+            } catch (Exception e) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Invalid or corrupted image file!");
+                return "redirect:/user/profile/" + user.getId();
+            }
         }
 
         upload_user.updateUploadUser(user); 
-
         return "redirect:/user/profile/" + user.getId();
     }
     

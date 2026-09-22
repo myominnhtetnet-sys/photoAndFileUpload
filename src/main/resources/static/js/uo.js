@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    // 1. Modal ပွင့်လာပါက Data ဖြည့်သွင်းခြင်း
+    //  Modal 
     const editUserModal = document.getElementById('editUserModal');
     if (editUserModal) {
         editUserModal.addEventListener('show.bs.modal', function(event) {
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 2. Photo Input ရွေးချယ်ချိန်တွင် Size & Type စစ်ဆေးခြင်း
+    // Photo Input check Real Image, Size & Type 
     const editPhotoInput = document.getElementById('editPhoto');
     const imgPreview = document.getElementById('editPhotoPreview');
 
@@ -42,40 +42,53 @@ document.addEventListener('DOMContentLoaded', function() {
         const file = event.target.files[0];
 
         if (file) {
-            // 🌟 1 MB (1,048,576 Bytes) Limit Check
+            //  1 MB Limit Check
             const maxSize = 1024 * 1024; 
             if (file.size > maxSize) {
-                alert('Image size is not over 1 MB !');
-                event.target.value = ''; // Selected file ကို ဖြုတ်မည်
-                return;
-            }
-
-            // File Type Check
-            const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
-            if (!validImageTypes.includes(file.type)) {
-                alert('Image (JPG, PNG, GIF, WEBP) can accept');
+                alert('Image size must not exceed 1 MB!');
                 event.target.value = ''; 
                 return;
             }
 
+            //  MIME Type Check
+            const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+            if (!validImageTypes.includes(file.type)) {
+                alert('Only JPG, PNG, GIF, WEBP images are allowed!');
+                event.target.value = ''; 
+                return;
+            }
+
+            //  Real Image Validation 
             const reader = new FileReader();
             reader.onload = function(e) {
-                imgPreview.src = e.target.result;
-                imgPreview.style.display = 'inline-block';
+                const img = new Image();
+                img.src = e.target.result;
+
+                img.onload = function() {
+                    //if Image  Preview 
+                    imgPreview.src = e.target.result;
+                    imgPreview.style.display = 'inline-block';
+                };
+
+                img.onerror = function() {
+                    //not Image show Alert delete Input 
+                    alert('Selected file is not a valid image!');
+                    editPhotoInput.value = ''; 
+                };
             };
             reader.readAsDataURL(file);
         }
     });
 
-    // 🌟 3. Update Form Submit နှိပ်ချိန်တွင် 1 MB ထက်ကြီးပါက တားဆီးခြင််း
+    // Update Form Submit 
     const updateForm = document.getElementById('updateForm');
     updateForm?.addEventListener('submit', function(event) {
         const file = editPhotoInput?.files[0];
-        const maxSize = 1024 * 1024; // 1 MB
+        const maxSize = 1024 * 1024;
 
         if (file && file.size > maxSize) {
-            alert('Image sizes is not over  1 MB!');
-            event.preventDefault(); // Server သို့ Submit မသွားအောင် တားဆီးမည်
+            alert('Image size must not exceed 1 MB!');
+            event.preventDefault();
             editPhotoInput.value = ''; 
         }
     });

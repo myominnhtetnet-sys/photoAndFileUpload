@@ -1,33 +1,50 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // ID with Element called
     const photoInput = document.getElementById('photo');
     const previewImg = document.getElementById('photoPreview');
     const registerForm = document.querySelector('form');
 
-    // 1. File ရွေးချယ်ချိန်တွင် စစ်ဆေးခြင်း
+    // Photo Input 
     photoInput?.addEventListener('change', function(event) {
         const file = event.target.files[0];
 
         if (file) {
-            const maxSize = 1024 * 1024; // 1 MB
+            // File Size Check (1 MB)
+            const maxSize = 1024 * 1024;
             if (file.size > maxSize) {
-                alert('Image size is not over 1 MB!');
-                event.target.value = ''; // File ပြန်ဖြုတ်မည်
-                previewImg.style.display = 'none';
-                return;
-            }
-
-            const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
-            if (!validTypes.includes(file.type)) {
-                alert('chose only image!');
+                alert('Image size must not exceed 1 MB!');
                 event.target.value = ''; 
                 previewImg.style.display = 'none';
                 return;
             }
 
+            // MIME Type Check
+            const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please select a valid image file!');
+                event.target.value = ''; 
+                previewImg.style.display = 'none';
+                return;
+            }
+
+            // Real Image Check & Preview Render
             const reader = new FileReader();
             reader.onload = function(e) {
-                previewImg.src = e.target.result;
-                previewImg.style.display = 'inline-block';
+                const img = new Image();
+                img.src = e.target.result;
+
+                img.onload = function() {
+                    // if Image show Preview 
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'inline-block';
+                };
+
+                img.onerror = function() {
+                    // not Image  show Error delete Preview 
+                    alert('Selected file is not a valid image!');
+                    photoInput.value = '';
+                    previewImg.style.display = 'none';
+                };
             };
             reader.readAsDataURL(file);
         } else {
@@ -35,12 +52,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 🌟 2. Form Submit နှိပ်ချိန်တွင် 1 MB ထက်ကြီးပါက Submit မလုပ်အောင် တားဆီးခြင်း
+    // Form Submit not over 1 MB 
     registerForm?.addEventListener('submit', function(event) {
         const file = photoInput?.files[0];
         if (file && file.size > (1024 * 1024)) {
-            alert('Image size is not over  1 MB!');
-            event.preventDefault(); // Server သို့ Form တင်ခြင်းကို တားဆီးမည်
+            alert('Image size must not exceed 1 MB!');
+            event.preventDefault();
             photoInput.value = '';
             previewImg.style.display = 'none';
         }
